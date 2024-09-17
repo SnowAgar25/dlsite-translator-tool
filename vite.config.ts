@@ -10,6 +10,7 @@ export default defineConfig({
         icon: 'https://www.google.com/s2/favicons?sz=64&domain=dlsite.com',
         namespace: 'https://github.com/SnowAgar25',
         match: ['https://*.dlsite.com/*'],
+        'run-at': 'document-start',  // 在文檔開始時運行腳本
       },
     }),
   ],
