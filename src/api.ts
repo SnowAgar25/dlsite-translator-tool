@@ -42,28 +42,44 @@ export async function fetchTranslationTable(productId: string, subDomain: string
                 "X-Requested-With": "XMLHttpRequest"
             },
             onload: function (response) {
-                if (response.status === 200) {
-                    const data = JSON.parse(response.responseText);
-                    const searchResult = data.search_result;
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(searchResult, 'text/html');
-                    const table = doc.querySelector('table.translation_table');
-                    if (table) {
-                        const tbody = table.querySelector('tbody');
-                        const rows = tbody?.querySelectorAll('tr');
-                        if (rows) {
-                            // Keep only the first 5 rows
-                            for (let i = 5; i < rows.length; i++) {
-                                tbody?.removeChild(rows[i]);
-                            }
-                        }
-                        resolve({ html: table.outerHTML });
-                    } else {
-                        reject('Translation table not found');
-                    }
-                } else {
+                if (response.status !== 200) {
                     reject(`Failed to fetch translation table: ${response.status}`);
+                    return;
                 }
+
+                const data = JSON.parse(response.responseText);
+                const searchResult = data.search_result;
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(searchResult, 'text/html');
+
+                const targetDiv = doc.querySelector(`li.search_result_img_box_inner > div[data-product_id="${productId}"]`);
+                if (!targetDiv) {
+                    reject(`Div with data-product_id="${productId}" not found`);
+                    return;
+                }
+
+                const parentElement = targetDiv.parentElement;
+                if (!parentElement) {
+                    reject('Parent element of target div not found');
+                    return;
+                }
+
+                const table = parentElement.querySelector('table.translation_table');
+                if (!table) {
+                    reject('Translation table not found in the parent element');
+                    return;
+                }
+
+                const tbody = table.querySelector('tbody');
+                const rows = tbody?.querySelectorAll('tr');
+                if (rows) {
+                    // 保留前5行
+                    for (let i = 5; i < rows.length; i++) {
+                        tbody?.removeChild(rows[i]);
+                    }
+                }
+
+                resolve({ html: table.outerHTML });
             },
             onerror: function (error) {
                 reject(`Error fetching translation table: ${error}`);
