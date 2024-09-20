@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DLsite 譯者工具 檢查作品翻譯狀態
 // @namespace    https://github.com/SnowAgar25
-// @version      3.1.1
+// @version      3.1.2
 // @author       SnowAgar25
 // @description  當滑鼠對準任何含有RJ號href的物件時，將顯示一個預覽框，顯示翻譯報酬和申請情況
 // @license      MIT
@@ -53,42 +53,6 @@
     left = Math.max(10, left);
     top = Math.max(10, top);
     return { left, top };
-  }
-  function addNavLink(href, text, iconClass, iconContent) {
-    const addNavItem = () => {
-      const navList = document.querySelector(".floorSubNav-item > ul.headerNav");
-      if (!navList) return;
-      const newNavItem = document.createElement("li");
-      newNavItem.className = "headerNav-item";
-      const newLink = document.createElement("a");
-      newLink.href = href;
-      newLink.textContent = text;
-      newLink.className = iconClass;
-      newNavItem.appendChild(newLink);
-      navList.appendChild(newNavItem);
-    };
-    addNavItem();
-    if (!document.querySelector(".floorSubNav-item > ul.headerNav")) {
-      const observer = new MutationObserver((_, obs) => {
-        if (document.querySelector(".floorSubNav-item > ul.headerNav")) {
-          addNavItem();
-          obs.disconnect();
-        }
-      });
-      const observeDOM = () => {
-        if (document.body) {
-          observer.observe(document.body, { childList: true, subtree: true });
-        } else {
-          setTimeout(observeDOM, 10);
-        }
-      };
-      observeDOM();
-    }
-    _GM_addStyle(`
-    .headerNav .headerNav-item .${iconClass}::before {
-      content: "${iconContent}";
-    }
-  `);
   }
   function addTranslationTableStyles() {
     _GM_addStyle(`
@@ -161,27 +125,37 @@
           "X-Requested-With": "XMLHttpRequest"
         },
         onload: function(response) {
-          if (response.status === 200) {
-            const data = JSON.parse(response.responseText);
-            const searchResult = data.search_result;
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(searchResult, "text/html");
-            const table = doc.querySelector("table.translation_table");
-            if (table) {
-              const tbody = table.querySelector("tbody");
-              const rows = tbody == null ? void 0 : tbody.querySelectorAll("tr");
-              if (rows) {
-                for (let i = 5; i < rows.length; i++) {
-                  tbody == null ? void 0 : tbody.removeChild(rows[i]);
-                }
-              }
-              resolve({ html: table.outerHTML });
-            } else {
-              reject("Translation table not found");
-            }
-          } else {
+          if (response.status !== 200) {
             reject(`Failed to fetch translation table: ${response.status}`);
+            return;
           }
+          const data = JSON.parse(response.responseText);
+          const searchResult = data.search_result;
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(searchResult, "text/html");
+          const targetDiv = doc.querySelector(`li.search_result_img_box_inner > div[data-product_id="${productId}"]`);
+          if (!targetDiv) {
+            reject(`Div with data-product_id="${productId}" not found`);
+            return;
+          }
+          const parentElement = targetDiv.parentElement;
+          if (!parentElement) {
+            reject("Parent element of target div not found");
+            return;
+          }
+          const table = parentElement.querySelector("table.translation_table");
+          if (!table) {
+            reject("Translation table not found in the parent element");
+            return;
+          }
+          const tbody = table.querySelector("tbody");
+          const rows = tbody == null ? void 0 : tbody.querySelectorAll("tr");
+          if (rows) {
+            for (let i = 5; i < rows.length; i++) {
+              tbody == null ? void 0 : tbody.removeChild(rows[i]);
+            }
+          }
+          resolve({ html: table.outerHTML });
         },
         onerror: function(error) {
           reject(`Error fetching translation table: ${error}`);
@@ -365,12 +339,53 @@
     document.body.addEventListener("mousemove", (e) => isVisible && showPreviewBox(e.clientX, e.clientY));
     document.body.addEventListener("mouseout", hidePreviewBox);
   }
+  function addNavLink(href, text, iconClass, iconContent) {
+    const addNavItem = () => {
+      const navList = document.querySelector(".floorSubNav-item > ul.headerNav");
+      if (!navList) return;
+      const newNavItem = document.createElement("li");
+      newNavItem.className = "headerNav-item";
+      const newLink = document.createElement("a");
+      newLink.href = href;
+      newLink.textContent = text;
+      newLink.className = iconClass;
+      newNavItem.appendChild(newLink);
+      navList.appendChild(newNavItem);
+    };
+    addNavItem();
+    if (!document.querySelector(".floorSubNav-item > ul.headerNav")) {
+      const observer = new MutationObserver((_, obs) => {
+        if (document.querySelector(".floorSubNav-item > ul.headerNav")) {
+          addNavItem();
+          obs.disconnect();
+        }
+      });
+      const observeDOM = () => {
+        if (document.body) {
+          observer.observe(document.body, { childList: true, subtree: true });
+        } else {
+          setTimeout(observeDOM, 10);
+        }
+      };
+      observeDOM();
+    }
+    _GM_addStyle(`
+    .headerNav .headerNav-item .${iconClass}::before {
+      content: "${iconContent}";
+    }
+  `);
+  }
+  function initCustomNavLinks() {
+    var _a;
+    const subdomain = (_a = window.location.href.match(/dlsite\.com\/(\w+)/)) == null ? void 0 : _a[1];
+    addNavLink(`https://www.dlsite.com/${subdomain}/works/translatable`, "翻訳許可作品", "magnifying-glass", "\\f002");
+    addNavLink("https://www.dlsite.com/translator/work", "翻訳申請", "translate-icon", "\\f1ab");
+  }
+  initCustomNavLinks();
   function init() {
     addTranslationTableStyles();
     initPreviewBox();
   }
-  addNavLink("https://www.dlsite.com/maniax/works/translatable", "翻訳許可作品", "magnifying-glass", "\\f002");
-  addNavLink("https://www.dlsite.com/translator/work", "翻訳申請", "translate-icon", "\\f1ab");
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
   } else {
