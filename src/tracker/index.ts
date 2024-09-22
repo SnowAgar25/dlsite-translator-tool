@@ -3,8 +3,11 @@
 import { saveToIndexedDB, getFromIndexedDB, clearFromIndexedDB, CACHE_KEY } from './indexedDB';
 import { modifyPage } from './pageModifier';
 import { search, processSearchResults, updatePage } from './search';
-import { createButtons, addButtonListeners } from './buttonHandler';
-import { initForCachedPage } from '../main'
+import { createButtons, addButtonListeners } from './navButtonHandler';
+import { initTrackButtons } from './trackButton';
+import { initCustomNavLinks } from '../nav-link';
+import { initPreviewBox } from '../previewBox';
+import { addTranslationTableStyles } from '../ui';
 
 const DLSITE_THEME = 'girls';
 const BASE_URL = `https://www.dlsite.com/${DLSITE_THEME}/works/translatable`;
@@ -80,23 +83,25 @@ export async function clearCache(): Promise<void> {
     }
 }
 
-export async function performSearchAndUpdate(): Promise<void> {
-    const searchParams = {
-        'maniax': ['RJ01248548', 'RJ01217348', 'RJ01248996', 'RJ01234443', 'RJ01255148', 'RJ01248548', 'RJ01251469', 'RJ01238176', 'RJ01221693', 'RJ01246834', 'RJ01242051', 'RJ01241016', 'RJ01240596', 'RJ01217348'],
-        'girls': ['RJ01254876', 'RJ01251876']
-    };
+function getTrackedWorks(): { [subdomain: string]: string[] } {
+    const trackedWorksJson = localStorage.getItem('dlsite_tracked_works');
+    return trackedWorksJson ? JSON.parse(trackedWorksJson) : {};
+}
 
-    const searchPromises = Object.entries(searchParams).map(([subdomain, keywords]) => {
-        console.log(`搜索 ${subdomain}: ${keywords.join(', ')} 中...`);
-        return search(subdomain, keywords);
+export async function performSearchAndUpdate(): Promise<void> {
+    const trackedWorks = getTrackedWorks();
+
+    const searchPromises = Object.entries(trackedWorks).map(([subdomain, productIds]) => {
+        console.log(`搜索 ${subdomain}: ${productIds.join(', ')} 中...`);
+        return search(subdomain, productIds);
     });
 
     const results = await Promise.all(searchPromises);
     const validResults = results.filter(result => result !== null);
 
     if (validResults.length > 0) {
-        const allKeywords = Object.values(searchParams).flat();
-        const { processedResults, totalCount } = processSearchResults(validResults, allKeywords);
+        const allProductIds = Object.values(trackedWorks).flat();
+        const { processedResults, totalCount } = processSearchResults(validResults, allProductIds);
         console.log('處理後的搜索結果數量:', processedResults.length);
         updatePage(processedResults, totalCount);
     } else {
@@ -105,7 +110,14 @@ export async function performSearchAndUpdate(): Promise<void> {
     }
 }
 
+const initForCachedPage = (): void => {
+    initCustomNavLinks();
+    addTranslationTableStyles();
+    initPreviewBox();
+};
+
 export function initTracker(): void {
     createButtons();
     addButtonListeners();
+    initTrackButtons();
 }

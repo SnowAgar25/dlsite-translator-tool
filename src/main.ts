@@ -11,7 +11,7 @@ if (isTracklist) {
 } else {
   initCustomNavLinks();
 
-  const init = (): void => {
+  function init() {
     addTranslationTableStyles();
     initPreviewBox();
     initTracker();
@@ -19,13 +19,8 @@ if (isTracklist) {
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
+    console.log('test');
   } else {
     init();
   }
 }
-
-export const initForCachedPage = (): void => {
-  initCustomNavLinks();
-  addTranslationTableStyles();
-  initPreviewBox();
-};
