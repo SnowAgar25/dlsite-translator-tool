@@ -4,6 +4,7 @@ import { saveToIndexedDB, getFromIndexedDB, clearFromIndexedDB, CACHE_KEY } from
 import { modifyPage } from './pageModifier';
 import { search, processSearchResults, updatePage } from './search';
 import { createButtons, addButtonListeners } from './buttonHandler';
+import { initForCachedPage } from '../main'
 
 const DLSITE_THEME = 'girls';
 const BASE_URL = `https://www.dlsite.com/${DLSITE_THEME}/works/translatable`;
@@ -42,27 +43,14 @@ export async function showCachedPage(): Promise<void> {
         }
 
         if (cachedHtml) {
-            const iframe = document.createElement('iframe');
-            iframe.style.width = '100%';
-            iframe.style.height = '100vh';
-            iframe.style.border = 'none';
-            document.body.innerHTML = '';
-            document.body.appendChild(iframe);
-
-            const iframeDocument = iframe.contentDocument;
-            if (iframeDocument) {
-                iframeDocument.open();
-                iframeDocument.write(cachedHtml);
-                iframeDocument.close();
-
-                iframe.onload = () => {
-                    createButtons();
-                    addButtonListeners(showCachedPage, clearCache);
-                    performSearchAndUpdate(iframeDocument);
-                };
-            } else {
-                throw new Error('無法獲取 iframe 的內容文檔');
+            if (!document.body) {
+                document.body = document.createElement('body'); // 確保 body 存在
             }
+            document.body.innerHTML = cachedHtml;
+            createButtons();
+            addButtonListeners();
+            performSearchAndUpdate();
+            initForCachedPage()
         } else {
             throw new Error('無法顯示緩存頁面');
         }
@@ -92,10 +80,10 @@ export async function clearCache(): Promise<void> {
     }
 }
 
-export async function performSearchAndUpdate(iframeDocument: Document): Promise<void> {
+export async function performSearchAndUpdate(): Promise<void> {
     const searchParams = {
         'maniax': ['RJ01248548', 'RJ01217348', 'RJ01248996', 'RJ01234443', 'RJ01255148', 'RJ01248548', 'RJ01251469', 'RJ01238176', 'RJ01221693', 'RJ01246834', 'RJ01242051', 'RJ01241016', 'RJ01240596', 'RJ01217348'],
-        'girls': ['RJ01254876', 'RJ01251876', 'RJ01248132'],
+        'girls': ['RJ01254876', 'RJ01251876']
     };
 
     const searchPromises = Object.entries(searchParams).map(([subdomain, keywords]) => {
@@ -110,18 +98,14 @@ export async function performSearchAndUpdate(iframeDocument: Document): Promise<
         const allKeywords = Object.values(searchParams).flat();
         const { processedResults, totalCount } = processSearchResults(validResults, allKeywords);
         console.log('處理後的搜索結果數量:', processedResults.length);
-        updatePage(iframeDocument, processedResults, totalCount);
+        updatePage(processedResults, totalCount);
     } else {
         console.log('所有搜索均未找到結果');
-        updatePage(iframeDocument, [], 0);
+        updatePage([], 0);
     }
 }
 
 export function initTracker(): void {
     createButtons();
-    addButtonListeners(showCachedPage, clearCache);
-
-    if (window.location.href.startsWith(BASE_URL)) {
-        fetchAndCachePage();
-    }
+    addButtonListeners();
 }

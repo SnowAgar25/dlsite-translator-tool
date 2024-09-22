@@ -37,6 +37,10 @@ export function modifyPage(doc: Document): void {
                 width: 100%;
                 max-width: 800px;
             }
+
+            #main_inner {
+                margin: 1% 5%;
+            }
         `;
 
         let head = doc.querySelector('head');
@@ -45,6 +49,11 @@ export function modifyPage(doc: Document): void {
             doc.insertBefore(head, doc.firstChild);
         }
         head.appendChild(styleElement);
+
+        const main_inner = doc.querySelector('#main > #main_inner') as HTMLElement | null;
+        if (main_inner) {
+            main_inner.style.margin = '1% 5%';
+        }
 
         const searchResultList = doc.querySelector('#search_result_list') as HTMLElement | null;
         if (searchResultList) {
@@ -60,19 +69,24 @@ export function modifyPage(doc: Document): void {
             mainModifyBox.style.maxWidth = '800px';
         }
 
+        const heading = doc.querySelector('.cp_overview_inner > .heading') as HTMLElement | null;
+        if (heading) {
+            heading.innerHTML = '關於追蹤列表'
+        }
+
         const listItems = doc.querySelectorAll('.cp_overview_list_item');
         const newContents = [
             {
-                heading: '翻譯獎勵',
-                content: '翻譯獎勵是一個激勵機制，旨在鼓勵高質量的翻譯工作。獎勵金額根據作品的受歡迎程度和翻譯品質而定。'
+                heading: '添加追蹤',
+                content: '只需點擊追蹤按鈕，即可將作品添加至您的個人追蹤列表。'
             },
             {
-                heading: '翻譯指南',
-                content: '我們提供詳細的翻譯指南，幫助譯者理解和遵循我們的翻譯標準。這包括術語表、風格指南和品質檢查清單。'
+                heading: '自動更新',
+                content: 'Dlsite和插件開啟時，每30分鐘自動檢查並更新追蹤作品的翻譯狀態。<br>（尚未實現）'
             },
             {
-                heading: '申請流程',
-                content: '申請翻譯項目很簡單。選擇你感興趣的作品，提交一個簡短的翻譯樣本，然後等待審核。我們會在7個工作日內給予回覆。'
+                heading: '全類型支持',
+                content: '支持多種類型作品，讓您輕鬆追蹤所有感興趣的可翻譯內容。'
             }
         ];
 
@@ -83,6 +97,11 @@ export function modifyPage(doc: Document): void {
                     <p>${newContents[index].content}</p>
                 `;
             }
+        });
+
+        const floorTabItems = doc.querySelectorAll('.floorTab-item');
+        floorTabItems.forEach((item) => {
+            item.classList.remove('is-active');
         });
 
         const btnBox = doc.querySelector('.cp_overview_btn_box');

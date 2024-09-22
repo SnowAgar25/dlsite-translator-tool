@@ -1,29 +1,36 @@
 // tracker/buttonHandler.ts
 
+import { clearCache } from ".";
+
 export function createButtons(): void {
-    const navList = document.querySelector('ul.globalNav');
+    const navList = document.querySelector('ul.floorTab');
     if (navList) {
         const cacheButtonLi = document.createElement('li');
-        cacheButtonLi.className = 'globalNav-item type-cache';
-        cacheButtonLi.innerHTML = '<a href="#"><i>追蹤列表</i></a>';
+        cacheButtonLi.className = 'floorTab-item type-cache';
+        cacheButtonLi.innerHTML = '<a href="#">追蹤列表</a>';
 
         const clearCacheButtonLi = document.createElement('li');
-        clearCacheButtonLi.className = 'globalNav-item type-clear-cache';
-        clearCacheButtonLi.innerHTML = '<a href="#"><i>清除緩存</i></a>';
+        clearCacheButtonLi.className = 'floorTab-item type-clear-cache';
+        clearCacheButtonLi.innerHTML = '<a href="#">清除緩存</a>';
 
         navList.appendChild(cacheButtonLi);
         navList.appendChild(clearCacheButtonLi);
     }
 }
 
-export function addButtonListeners(showCachedPage: () => void, clearCache: () => void): void {
-    const cacheButton = document.querySelector('.globalNav-item.type-cache a') as HTMLAnchorElement | null;
-    const clearCacheButton = document.querySelector('.globalNav-item.type-clear-cache a') as HTMLAnchorElement | null;
+export function toTracklist(): void {
+    const newUrl = `https://www.dlsite.com/home/?tracklist=true`;
+    window.location.href = newUrl;
+}
+
+export function addButtonListeners(): void {
+    const cacheButton = document.querySelector('.floorTab-item.type-cache a') as HTMLAnchorElement | null;
+    const clearCacheButton = document.querySelector('.floorTab-item.type-clear-cache a') as HTMLAnchorElement | null;
 
     if (cacheButton) {
         cacheButton.addEventListener('click', function (e) {
             e.preventDefault();
-            showCachedPage();
+            toTracklist();
         });
     }
 

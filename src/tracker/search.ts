@@ -41,11 +41,11 @@ export function processSearchResults(results: any[], keywords: string[]): { proc
     return { processedResults, totalCount };
 }
 
-export function updatePage(iframeDocument: Document, processedResults: string[], totalCount: number): void {
-    const container = iframeDocument.querySelector('#search_result_list') as HTMLElement | null;
+export function updatePage(processedResults: string[], totalCount: number): void {
+    const container = document.querySelector('#search_result_list') as HTMLElement | null;
     if (container) {
         container.className = '_search_result_list';
-        const ul = iframeDocument.createElement('ul');
+        const ul = document.createElement('ul');
         ul.id = 'search_result_img_box';
         ul.className = 'n_worklist';
         ul.innerHTML = processedResults.join('');
@@ -55,7 +55,7 @@ export function updatePage(iframeDocument: Document, processedResults: string[],
         console.error('未找到搜索結果容器');
     }
 
-    const headerContainer = iframeDocument.querySelector('._scroll_position') as HTMLElement | null;
+    const headerContainer = document.querySelector('._scroll_position') as HTMLElement | null;
     if (headerContainer) {
         headerContainer.innerHTML = `
             <div class="cp_heading type_game type_result">
