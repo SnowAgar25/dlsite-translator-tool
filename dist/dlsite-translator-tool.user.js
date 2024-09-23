@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DLsite 譯者工具 檢查作品翻譯狀態
 // @namespace    https://github.com/SnowAgar25
-// @version      3.3.0
+// @version      3.3.1
 // @author       SnowAgar25
 // @description  當滑鼠對準任何含有RJ號href的物件時，將顯示一個預覽框，顯示翻譯報酬和申請情況
 // @license      MIT
@@ -806,6 +806,48 @@
     }
     window.addEventListener("load", startObserving);
   }
+  const defaultConfig = {
+    debug: true,
+    modules: {
+      navLink: {
+        enabled: true
+      },
+      previewBox: {
+        enabled: true
+      },
+      tracker: {
+        enabled: true
+      }
+    }
+  };
+  function loadConfig() {
+    const savedConfig = _GM_getValue("userConfig", null);
+    if (savedConfig) {
+      return { ...defaultConfig, ...JSON.parse(savedConfig) };
+    }
+    return defaultConfig;
+  }
+  function saveConfig(config2) {
+    _GM_setValue("userConfig", JSON.stringify(config2));
+  }
+  function getConfig() {
+    return loadConfig();
+  }
+  function updateConfig(newConfig) {
+    const currentConfig = loadConfig();
+    const updatedConfig = { ...currentConfig, ...newConfig };
+    saveConfig(updatedConfig);
+  }
+  const config = loadConfig();
+  function refreshConfig() {
+    Object.assign(config, loadConfig());
+  }
+  function registerSettingsMenu() {
+    _GM_registerMenuCommand("設置", () => {
+      const settingsUrl = "https://github.com/SnowAgar25/dlsite-translator-tool";
+      window.open(settingsUrl, "_blank");
+    });
+  }
   const DLSITE_THEME = "girls";
   const BASE_URL = `https://www.dlsite.com/${DLSITE_THEME}/works/translatable`;
   const TARGET_URL = `${BASE_URL}?keyword=%F0%9F%A5%B0`;
@@ -905,9 +947,12 @@
     }
   }
   const initForCachedPage = () => {
-    initCustomNavLinks();
-    addTranslationTableStyles();
-    initPreviewBox();
+    if (config.modules.navLink.enabled) {
+      initCustomNavLinks();
+    }
+    if (config.modules.previewBox.enabled) {
+      initPreviewBox();
+    }
     injectTrackButtons();
   };
   function initTracker() {
@@ -915,48 +960,6 @@
     addNavButtonListeners();
     injectTrackButtons();
     initTrackButtonHandler();
-  }
-  const defaultConfig = {
-    debug: true,
-    modules: {
-      navLink: {
-        enabled: true
-      },
-      previewBox: {
-        enabled: true
-      },
-      tracker: {
-        enabled: true
-      }
-    }
-  };
-  function loadConfig() {
-    const savedConfig = _GM_getValue("userConfig", null);
-    if (savedConfig) {
-      return { ...defaultConfig, ...JSON.parse(savedConfig) };
-    }
-    return defaultConfig;
-  }
-  function saveConfig(config2) {
-    _GM_setValue("userConfig", JSON.stringify(config2));
-  }
-  function getConfig() {
-    return loadConfig();
-  }
-  function updateConfig(newConfig) {
-    const currentConfig = loadConfig();
-    const updatedConfig = { ...currentConfig, ...newConfig };
-    saveConfig(updatedConfig);
-  }
-  const config = loadConfig();
-  function refreshConfig() {
-    Object.assign(config, loadConfig());
-  }
-  function registerSettingsMenu() {
-    _GM_registerMenuCommand("設置", () => {
-      const settingsUrl = "https://github.com/SnowAgar25/dlsite-translator-tool";
-      window.open(settingsUrl, "_blank");
-    });
   }
   const settingsStructure = {
     "設置": [

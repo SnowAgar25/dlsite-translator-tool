@@ -5,10 +5,10 @@ import { modifyPage } from './pageModifier';
 import { search, processSearchResults, updatePage } from './search';
 import { createNavButtons, addNavButtonListeners } from './navButtonHandler';
 import { injectTrackButtons } from './trackButton';
-import { initCustomNavLinks } from 'src/nav-link';
-import { initPreviewBox } from 'src/preview-box';
+import { initCustomNavLinks } from '../nav-link';
+import { initPreviewBox } from '../preview-box';
 import { initTrackButtonHandler } from './trackButtonHandler';
-import { config } from 'src/config';
+import { config } from '../config';
 
 const DLSITE_THEME = 'girls';
 const BASE_URL = `https://www.dlsite.com/${DLSITE_THEME}/works/translatable`;
