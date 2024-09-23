@@ -1,5 +1,4 @@
-import { initPreviewBox } from './previewBox';
-import { addTranslationTableStyles } from './ui';
+import { initPreviewBox } from './preview-box';
 import { initCustomNavLinks } from './nav-link';
 import { initTracker, showCachedPage } from './tracker';
 
@@ -12,14 +11,12 @@ if (isTracklist) {
   initCustomNavLinks();
 
   function init() {
-    addTranslationTableStyles();
     initPreviewBox();
     initTracker();
   };
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
-    console.log('test');
   } else {
     init();
   }

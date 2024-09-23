@@ -3,11 +3,12 @@
 import { saveToIndexedDB, getFromIndexedDB, clearFromIndexedDB, CACHE_KEY } from './indexedDB';
 import { modifyPage } from './pageModifier';
 import { search, processSearchResults, updatePage } from './search';
-import { createButtons, addButtonListeners } from './navButtonHandler';
-import { initTrackButtons } from './trackButton';
+import { createNavButtons, addNavButtonListeners } from './navButtonHandler';
+import { injectTrackButtons } from './trackButton';
 import { initCustomNavLinks } from '../nav-link';
-import { initPreviewBox } from '../previewBox';
-import { addTranslationTableStyles } from '../ui';
+import { initPreviewBox } from '../preview-box';
+import { addTranslationTableStyles } from '../preview-box/ui';
+import { initTrackButtonHandler } from './trackButtonHandler';
 
 const DLSITE_THEME = 'girls';
 const BASE_URL = `https://www.dlsite.com/${DLSITE_THEME}/works/translatable`;
@@ -50,9 +51,9 @@ export async function showCachedPage(): Promise<void> {
                 document.body = document.createElement('body'); // 確保 body 存在
             }
             document.body.innerHTML = cachedHtml;
-            createButtons();
-            addButtonListeners();
-            performSearchAndUpdate();
+            createNavButtons();
+            addNavButtonListeners();
+            await performSearchAndUpdate();
             initForCachedPage()
         } else {
             throw new Error('無法顯示緩存頁面');
@@ -114,10 +115,12 @@ const initForCachedPage = (): void => {
     initCustomNavLinks();
     addTranslationTableStyles();
     initPreviewBox();
+    injectTrackButtons();
 };
 
 export function initTracker(): void {
-    createButtons();
-    addButtonListeners();
-    initTrackButtons();
+    createNavButtons();
+    addNavButtonListeners();
+    injectTrackButtons();
+    initTrackButtonHandler()
 }

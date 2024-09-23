@@ -1,5 +1,3 @@
-// tracker/pageModifier.ts
-
 export function modifyPage(doc: Document): void {
     try {
         const styleElement = document.createElement('style');
@@ -27,17 +25,6 @@ export function modifyPage(doc: Document): void {
             .clear-button:hover {
                 background-color: #da190b;
             }
-            #search_result_list {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                min-height: 300px;
-            }
-            #search_result_list > .main_modify_box {
-                width: 100%;
-                max-width: 800px;
-            }
-
             #main_inner {
                 margin: 1% 5%;
             }
@@ -55,23 +42,9 @@ export function modifyPage(doc: Document): void {
             main_inner.style.margin = '1% 5%';
         }
 
-        const searchResultList = doc.querySelector('#search_result_list') as HTMLElement | null;
-        if (searchResultList) {
-            searchResultList.style.display = 'flex';
-            searchResultList.style.justifyContent = 'center';
-            searchResultList.style.alignItems = 'center';
-            searchResultList.style.minHeight = '300px';
-        }
-
-        const mainModifyBox = doc.querySelector('#search_result_list > .main_modify_box') as HTMLElement | null;
-        if (mainModifyBox) {
-            mainModifyBox.style.width = '100%';
-            mainModifyBox.style.maxWidth = '800px';
-        }
-
         const heading = doc.querySelector('.cp_overview_inner > .heading') as HTMLElement | null;
         if (heading) {
-            heading.innerHTML = '關於追蹤列表'
+            heading.innerHTML = '關於追蹤列表';
         }
 
         const listItems = doc.querySelectorAll('.cp_overview_list_item');

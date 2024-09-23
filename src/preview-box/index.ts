@@ -1,7 +1,7 @@
-import { createPreviewBox, calculatePosition } from './ui';
+import { createPreviewBox, calculatePosition, addTranslationTableStyles } from './ui';
 import { fetchProductInfo, fetchTranslationTable } from './api';
 import { getWholesalePrice } from './utils';
-import { ProductCache, ProductInfo } from './types';
+import { ProductCache, ProductInfo } from './api';
 
 let previewBox: HTMLDivElement | null = null;
 let isVisible = false;
@@ -152,6 +152,7 @@ function displayProductInfo(info: ProductInfo, productId: string, x: number, y: 
 }
 
 export function initPreviewBox(): void {
+    addTranslationTableStyles()
     previewBox = createPreviewBox();
     document.body.addEventListener('mouseover', handleMouseEnter);
     document.body.addEventListener('mousemove', (e: MouseEvent) => isVisible && showPreviewBox(e.clientX, e.clientY));

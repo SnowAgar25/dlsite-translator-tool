@@ -59,7 +59,7 @@ export function updatePage(processedResults: string[], totalCount: number): void
     if (headerContainer) {
         headerContainer.innerHTML = `
             <div class="cp_heading type_game type_result">
-                <h2 class="cp_heading_inner">追蹤列表🥰</h2>
+                <h2 class="cp_heading_inner">追蹤列表📂</h2>
                 <div class="cp_result_count">
                     ${totalCount}<span>件中</span>
                     1～${totalCount}

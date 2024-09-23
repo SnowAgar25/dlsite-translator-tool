@@ -5,7 +5,7 @@ interface TrackButtonData {
     subdomain: string;
 }
 
-function injectTrackButtons() {
+export function injectTrackButtons() {
     const workItems = document.querySelectorAll('dt.search_img.work_thumb');
     workItems.forEach((item) => {
         const linkElement = item.querySelector('a[href*="product_id/RJ"]');
@@ -168,10 +168,4 @@ function removeFromTrackedWorks(productId: string) {
 function getTrackedWorks(): { [subdomain: string]: string[] } {
     const trackedWorksJson = localStorage.getItem(TRACKED_WORKS_KEY);
     return trackedWorksJson ? JSON.parse(trackedWorksJson) : {};
-}
-
-export function initTrackButtons() {
-    if (window.location.href.match(/https:\/\/www\.dlsite\.com\/\w+\/works\/translatable/)) {
-        injectTrackButtons();
-    }
 }

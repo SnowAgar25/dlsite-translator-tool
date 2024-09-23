@@ -1,4 +1,7 @@
-import { PriceTableEntry } from './types';
+export interface PriceTableEntry {
+    販売価格: number;
+    卸価格: number;
+}
 
 const priceTable: PriceTableEntry[] = [
     { 販売価格: 110, 卸価格: 53 },
@@ -42,10 +45,14 @@ const priceTable: PriceTableEntry[] = [
     { 販売価格: 4290, 卸価格: 3343 },
 ];
 
-export function getWholesalePrice(販売価格: number): number | null {
+export function getWholesalePrice(販売価格: number): number {
     if (販売価格 >= 4400) {
         return Math.floor(販売価格 * 0.784);
     }
     const priceRow = priceTable.find(row => row.販売価格 === 販売価格);
-    return priceRow ? priceRow.卸価格 : null;
+    if (priceRow) {
+        return priceRow.卸価格;
+    } else {
+        throw new Error('沒有相應價格，又不超過4400，出Bug了？')
+    }
 }

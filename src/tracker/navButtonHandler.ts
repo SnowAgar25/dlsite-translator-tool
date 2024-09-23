@@ -2,12 +2,12 @@
 
 import { clearCache } from ".";
 
-export function createButtons(): void {
+export function createNavButtons(): void {
     const navList = document.querySelector('ul.floorTab');
     if (navList) {
         const cacheButtonLi = document.createElement('li');
         cacheButtonLi.className = 'floorTab-item type-cache';
-        cacheButtonLi.innerHTML = '<a href="#">追蹤列表</a>';
+        cacheButtonLi.innerHTML = `<a href="https://www.dlsite.com/${window.location.href.match(/dlsite\.com\/(\w+)/)?.[1] || 'home'}/?tracklist=true">追蹤列表</a>`;
 
         const clearCacheButtonLi = document.createElement('li');
         clearCacheButtonLi.className = 'floorTab-item type-clear-cache';
@@ -19,11 +19,11 @@ export function createButtons(): void {
 }
 
 export function toTracklist(): void {
-    const newUrl = `https://www.dlsite.com/home/?tracklist=true`;
+    const newUrl = `https://www.dlsite.com/${window.location.href.match(/dlsite\.com\/(\w+)/)?.[1] || 'home'}/?tracklist=true`;
     window.location.href = newUrl;
 }
 
-export function addButtonListeners(): void {
+export function addNavButtonListeners(): void {
     const cacheButton = document.querySelector('.floorTab-item.type-cache a') as HTMLAnchorElement | null;
     const clearCacheButton = document.querySelector('.floorTab-item.type-clear-cache a') as HTMLAnchorElement | null;
 
