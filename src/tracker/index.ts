@@ -5,14 +5,24 @@ import { modifyPage } from './pageModifier';
 import { search, processSearchResults, updatePage } from './search';
 import { createNavButtons, addNavButtonListeners } from './navButtonHandler';
 import { injectTrackButtons } from './trackButton';
-import { initCustomNavLinks } from '../nav-link';
-import { initPreviewBox } from '../preview-box';
-import { addTranslationTableStyles } from '../preview-box/ui';
+import { initCustomNavLinks } from 'src/nav-link';
+import { initPreviewBox } from 'src/preview-box';
 import { initTrackButtonHandler } from './trackButtonHandler';
+import { config } from 'src/config';
 
 const DLSITE_THEME = 'girls';
 const BASE_URL = `https://www.dlsite.com/${DLSITE_THEME}/works/translatable`;
 const TARGET_URL = `${BASE_URL}?keyword=%F0%9F%A5%B0`;
+
+function cleanupExtraBodyElements() {
+    const bodyElements = document.getElementsByTagName('body');
+    if (bodyElements.length > 1) {
+        // 保留第一個 body 元素，移除其他的
+        for (let i = bodyElements.length - 1; i > 0; i--) {
+            bodyElements[i].parentNode?.removeChild(bodyElements[i]);
+        }
+    }
+}
 
 export async function fetchAndCachePage(): Promise<string | null> {
     try {
@@ -54,7 +64,10 @@ export async function showCachedPage(): Promise<void> {
             createNavButtons();
             addNavButtonListeners();
             await performSearchAndUpdate();
-            initForCachedPage()
+            initForCachedPage();
+            setTimeout(() => {
+                cleanupExtraBodyElements();
+            }, 100);
         } else {
             throw new Error('無法顯示緩存頁面');
         }
@@ -112,9 +125,12 @@ export async function performSearchAndUpdate(): Promise<void> {
 }
 
 const initForCachedPage = (): void => {
-    initCustomNavLinks();
-    addTranslationTableStyles();
-    initPreviewBox();
+    if (config.modules.navLink.enabled) {
+        initCustomNavLinks();
+    }
+    if (config.modules.previewBox.enabled) {
+        initPreviewBox();
+    }
     injectTrackButtons();
 };
 

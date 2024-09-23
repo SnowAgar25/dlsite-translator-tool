@@ -110,6 +110,21 @@ function injectSettingsUI() {
         targetElement.insertAdjacentHTML('afterend', generateSettingsHTML());
         initializeSettings();
     }
+    const markdownBody = document.querySelector('.markdown-body');
+
+    if (markdownBody) {
+        // 計算需要滾動的距離
+        const windowHeight = window.innerHeight;
+        const markdownBodyRect = markdownBody.getBoundingClientRect();
+        const markdownBodyHeight = markdownBodyRect.height;
+        const scrollToY = markdownBodyRect.top + window.pageYOffset - (windowHeight / 2) + (markdownBodyHeight / 2);
+
+        // 平滑滾動到目標位置
+        window.scrollTo({
+            top: scrollToY,
+            behavior: 'smooth'
+        });
+    }
 }
 
 function getNestedValue(obj: any, path: string): any {
@@ -161,10 +176,17 @@ function saveSettings() {
 
 export function initSettingsUI() {
     if (window.location.href.startsWith('https://github.com/SnowAgar25/dlsite-translator-tool')) {
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', injectSettingsUI);
-        } else {
-            injectSettingsUI();
-        }
+        const observer = new MutationObserver((_mutations, obs) => {
+            const targetElement = document.querySelector('.markdown-heading');
+            if (targetElement) {
+                injectSettingsUI();
+                obs.disconnect(); // 停止觀察
+            }
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
     }
 }

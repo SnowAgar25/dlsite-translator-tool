@@ -648,7 +648,7 @@
             border-radius: 50%;
             font-size: 12px;
             cursor: pointer;
-            z-index: 1000; /* 確保按鈕始終在最上層 */
+            z-index: 1;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
@@ -809,6 +809,15 @@
   const DLSITE_THEME = "girls";
   const BASE_URL = `https://www.dlsite.com/${DLSITE_THEME}/works/translatable`;
   const TARGET_URL = `${BASE_URL}?keyword=%F0%9F%A5%B0`;
+  function cleanupExtraBodyElements() {
+    var _a;
+    const bodyElements = document.getElementsByTagName("body");
+    if (bodyElements.length > 1) {
+      for (let i = bodyElements.length - 1; i > 0; i--) {
+        (_a = bodyElements[i].parentNode) == null ? void 0 : _a.removeChild(bodyElements[i]);
+      }
+    }
+  }
   async function fetchAndCachePage() {
     try {
       const response = await fetch(TARGET_URL);
@@ -843,6 +852,9 @@
         addNavButtonListeners();
         await performSearchAndUpdate();
         initForCachedPage();
+        setTimeout(() => {
+          cleanupExtraBodyElements();
+        }, 100);
       } else {
         throw new Error("無法顯示緩存頁面");
       }
@@ -1039,6 +1051,17 @@
       targetElement.insertAdjacentHTML("afterend", generateSettingsHTML());
       initializeSettings();
     }
+    const markdownBody = document.querySelector(".markdown-body");
+    if (markdownBody) {
+      const windowHeight = window.innerHeight;
+      const markdownBodyRect = markdownBody.getBoundingClientRect();
+      const markdownBodyHeight = markdownBodyRect.height;
+      const scrollToY = markdownBodyRect.top + window.pageYOffset - windowHeight / 2 + markdownBodyHeight / 2;
+      window.scrollTo({
+        top: scrollToY,
+        behavior: "smooth"
+      });
+    }
   }
   function getNestedValue(obj, path) {
     return path.split(".").reduce((prev, curr) => prev && prev[curr], obj);
@@ -1080,11 +1103,17 @@
   }
   function initSettingsUI() {
     if (window.location.href.startsWith("https://github.com/SnowAgar25/dlsite-translator-tool")) {
-      if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", injectSettingsUI);
-      } else {
-        injectSettingsUI();
-      }
+      const observer = new MutationObserver((_mutations, obs) => {
+        const targetElement = document.querySelector(".markdown-heading");
+        if (targetElement) {
+          injectSettingsUI();
+          obs.disconnect();
+        }
+      });
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
     }
   }
   function initMainFeatures() {

@@ -34,7 +34,7 @@ export function injectTrackButtons() {
             border-radius: 50%;
             font-size: 12px;
             cursor: pointer;
-            z-index: 1000; /* 確保按鈕始終在最上層 */
+            z-index: 1;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
