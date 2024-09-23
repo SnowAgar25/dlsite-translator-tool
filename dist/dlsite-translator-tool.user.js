@@ -1,13 +1,17 @@
 // ==UserScript==
 // @name         DLsite 譯者工具 檢查作品翻譯狀態
 // @namespace    https://github.com/SnowAgar25
-// @version      3.2.0
+// @version      3.3.0
 // @author       SnowAgar25
 // @description  當滑鼠對準任何含有RJ號href的物件時，將顯示一個預覽框，顯示翻譯報酬和申請情況
 // @license      MIT
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=dlsite.com
 // @match        https://*.dlsite.com/*
+// @match        https://github.com/SnowAgar25/dlsite-translator-tool
 // @grant        GM_addStyle
+// @grant        GM_getValue
+// @grant        GM_registerMenuCommand
+// @grant        GM_setValue
 // @grant        GM_xmlhttpRequest
 // @run-at       document-start
 // ==/UserScript==
@@ -16,6 +20,9 @@
   'use strict';
 
   var _GM_addStyle = /* @__PURE__ */ (() => typeof GM_addStyle != "undefined" ? GM_addStyle : void 0)();
+  var _GM_getValue = /* @__PURE__ */ (() => typeof GM_getValue != "undefined" ? GM_getValue : void 0)();
+  var _GM_registerMenuCommand = /* @__PURE__ */ (() => typeof GM_registerMenuCommand != "undefined" ? GM_registerMenuCommand : void 0)();
+  var _GM_setValue = /* @__PURE__ */ (() => typeof GM_setValue != "undefined" ? GM_setValue : void 0)();
   var _GM_xmlhttpRequest = /* @__PURE__ */ (() => typeof GM_xmlhttpRequest != "undefined" ? GM_xmlhttpRequest : void 0)();
   function createPreviewBox() {
     const box = document.createElement("div");
@@ -209,7 +216,11 @@
       return Math.floor(販売価格 * 0.784);
     }
     const priceRow = priceTable.find((row) => row.販売価格 === 販売価格);
-    return priceRow ? priceRow.卸価格 : null;
+    if (priceRow) {
+      return priceRow.卸価格;
+    } else {
+      throw new Error("沒有相應價格，又不超過4400，出Bug了？");
+    }
   }
   let previewBox = null;
   let isVisible = false;
@@ -334,6 +345,7 @@
     }
   }
   function initPreviewBox() {
+    addTranslationTableStyles();
     previewBox = createPreviewBox();
     document.body.addEventListener("mouseover", handleMouseEnter);
     document.body.addEventListener("mousemove", (e) => isVisible && showPreviewBox(e.clientX, e.clientY));
@@ -455,17 +467,6 @@
             .clear-button:hover {
                 background-color: #da190b;
             }
-            #search_result_list {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                min-height: 300px;
-            }
-            #search_result_list > .main_modify_box {
-                width: 100%;
-                max-width: 800px;
-            }
-
             #main_inner {
                 margin: 1% 5%;
             }
@@ -479,18 +480,6 @@
       const main_inner = doc.querySelector("#main > #main_inner");
       if (main_inner) {
         main_inner.style.margin = "1% 5%";
-      }
-      const searchResultList = doc.querySelector("#search_result_list");
-      if (searchResultList) {
-        searchResultList.style.display = "flex";
-        searchResultList.style.justifyContent = "center";
-        searchResultList.style.alignItems = "center";
-        searchResultList.style.minHeight = "300px";
-      }
-      const mainModifyBox = doc.querySelector("#search_result_list > .main_modify_box");
-      if (mainModifyBox) {
-        mainModifyBox.style.width = "100%";
-        mainModifyBox.style.maxWidth = "800px";
       }
       const heading = doc.querySelector(".cp_overview_inner > .heading");
       if (heading) {
@@ -585,7 +574,7 @@
     if (headerContainer) {
       headerContainer.innerHTML = `
             <div class="cp_heading type_game type_result">
-                <h2 class="cp_heading_inner">追蹤列表🥰</h2>
+                <h2 class="cp_heading_inner">追蹤列表📂</h2>
                 <div class="cp_result_count">
                     ${totalCount}<span>件中</span>
                     1～${totalCount}
@@ -596,12 +585,13 @@
     }
     console.log("頁面已更新");
   }
-  function createButtons() {
+  function createNavButtons() {
+    var _a;
     const navList = document.querySelector("ul.floorTab");
     if (navList) {
       const cacheButtonLi = document.createElement("li");
       cacheButtonLi.className = "floorTab-item type-cache";
-      cacheButtonLi.innerHTML = '<a href="#">追蹤列表</a>';
+      cacheButtonLi.innerHTML = `<a href="https://www.dlsite.com/${((_a = window.location.href.match(/dlsite\.com\/(\w+)/)) == null ? void 0 : _a[1]) || "home"}/?tracklist=true">追蹤列表</a>`;
       const clearCacheButtonLi = document.createElement("li");
       clearCacheButtonLi.className = "floorTab-item type-clear-cache";
       clearCacheButtonLi.innerHTML = '<a href="#">清除緩存</a>';
@@ -610,10 +600,11 @@
     }
   }
   function toTracklist() {
-    const newUrl = `https://www.dlsite.com/home/?tracklist=true`;
+    var _a;
+    const newUrl = `https://www.dlsite.com/${((_a = window.location.href.match(/dlsite\.com\/(\w+)/)) == null ? void 0 : _a[1]) || "home"}/?tracklist=true`;
     window.location.href = newUrl;
   }
-  function addButtonListeners() {
+  function addNavButtonListeners() {
     const cacheButton = document.querySelector(".floorTab-item.type-cache a");
     const clearCacheButton = document.querySelector(".floorTab-item.type-clear-cache a");
     if (cacheButton) {
@@ -780,10 +771,40 @@
     const trackedWorksJson = localStorage.getItem(TRACKED_WORKS_KEY);
     return trackedWorksJson ? JSON.parse(trackedWorksJson) : {};
   }
-  function initTrackButtons() {
-    if (window.location.href.match(/https:\/\/www\.dlsite\.com\/\w+\/works\/translatable/)) {
+  function debounce(func, wait) {
+    let timeout = null;
+    return (...args) => {
+      if (timeout !== null) {
+        clearTimeout(timeout);
+      }
+      timeout = setTimeout(() => func(...args), wait);
+    };
+  }
+  function initTrackButtonHandler() {
+    console.log("初始化 DLsite 追蹤器");
+    const debouncedInjectButtons = debounce(() => {
+      console.log("搜索結果容器發生變化，注入追蹤按鈕");
       injectTrackButtons();
+    }, 300);
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
+          debouncedInjectButtons();
+        }
+      });
+    });
+    const config2 = { childList: true };
+    function startObserving() {
+      const targetNode = document.querySelector("._search_result_container");
+      if (targetNode) {
+        observer.observe(targetNode, config2);
+        console.log("開始監視搜索結果容器");
+      } else {
+        console.log("未找到搜索結果容器，稍後重試");
+        setTimeout(startObserving, 1e3);
+      }
     }
+    window.addEventListener("load", startObserving);
   }
   const DLSITE_THEME = "girls";
   const BASE_URL = `https://www.dlsite.com/${DLSITE_THEME}/works/translatable`;
@@ -818,9 +839,9 @@
           document.body = document.createElement("body");
         }
         document.body.innerHTML = cachedHtml;
-        createButtons();
-        addButtonListeners();
-        performSearchAndUpdate();
+        createNavButtons();
+        addNavButtonListeners();
+        await performSearchAndUpdate();
         initForCachedPage();
       } else {
         throw new Error("無法顯示緩存頁面");
@@ -875,28 +896,230 @@
     initCustomNavLinks();
     addTranslationTableStyles();
     initPreviewBox();
+    injectTrackButtons();
   };
   function initTracker() {
-    createButtons();
-    addButtonListeners();
-    initTrackButtons();
+    createNavButtons();
+    addNavButtonListeners();
+    injectTrackButtons();
+    initTrackButtonHandler();
   }
-  const isTracklist = window.location.href.includes("?tracklist=true");
-  if (isTracklist) {
-    showCachedPage();
-  } else {
-    let init = function() {
-      addTranslationTableStyles();
-      initPreviewBox();
-      initTracker();
-    };
-    initCustomNavLinks();
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", init);
-      console.log("test");
-    } else {
-      init();
+  const defaultConfig = {
+    debug: true,
+    modules: {
+      navLink: {
+        enabled: true
+      },
+      previewBox: {
+        enabled: true
+      },
+      tracker: {
+        enabled: true
+      }
     }
+  };
+  function loadConfig() {
+    const savedConfig = _GM_getValue("userConfig", null);
+    if (savedConfig) {
+      return { ...defaultConfig, ...JSON.parse(savedConfig) };
+    }
+    return defaultConfig;
+  }
+  function saveConfig(config2) {
+    _GM_setValue("userConfig", JSON.stringify(config2));
+  }
+  function getConfig() {
+    return loadConfig();
+  }
+  function updateConfig(newConfig) {
+    const currentConfig = loadConfig();
+    const updatedConfig = { ...currentConfig, ...newConfig };
+    saveConfig(updatedConfig);
+  }
+  const config = loadConfig();
+  function refreshConfig() {
+    Object.assign(config, loadConfig());
+  }
+  function registerSettingsMenu() {
+    _GM_registerMenuCommand("設置", () => {
+      const settingsUrl = "https://github.com/SnowAgar25/dlsite-translator-tool";
+      window.open(settingsUrl, "_blank");
+    });
+  }
+  const settingsStructure = {
+    "設置": [
+      {
+        type: "checkbox",
+        label: "Debug模式",
+        key: "debug",
+        html: (field) => `
+        <div class="option">
+          <label>
+            <input type="checkbox" class="checkbox" id="${field.key}">
+            <span>${field.label}</span>
+          </label>
+        </div>
+      `
+      },
+      {
+        type: "checkbox",
+        label: "跳轉按鈕：「翻訳許可作品」&「翻訳申請」",
+        key: "modules.navLink.enabled",
+        html: (field) => `
+        <div class="option">
+          <label>
+            <input type="checkbox" class="checkbox" id="${field.key}">
+            <span>${field.label}</span>
+          </label>
+        </div>
+      `
+      },
+      {
+        type: "checkbox",
+        label: "預覽框：顯示作品報酬和翻譯狀態",
+        key: "modules.previewBox.enabled",
+        html: (field) => `
+        <div class="option">
+          <label>
+            <input type="checkbox" class="checkbox" id="${field.key}">
+            <span>${field.label}</span>
+          </label>
+        </div>
+      `
+      },
+      {
+        type: "checkbox",
+        label: "追蹤功能：作品翻譯狀態",
+        key: "modules.tracker.enabled",
+        html: (field) => `
+        <div class="option">
+          <label>
+            <input type="checkbox" class="checkbox" id="${field.key}">
+            <span>${field.label}</span>
+          </label>
+        </div>
+      `
+      }
+    ]
+  };
+  const styles = `
+  <style>
+    .settings { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #6D92FF; }
+    .settings h3 { font-size: 18px; margin-bottom: 10px; }
+    .option { margin-bottom: 10px; }
+    .option label { display: flex; align-items: center; cursor: pointer; }
+    .option select { padding: 8px; border-radius: 5px; border: 1px solid #6D92FF; color: #6D92FF; background-color: white; font-size: 14px; margin-top: 5px; }
+    hr { border: 0; height: 1px; background-color: #6D92FF; margin: 20px 0; opacity: 0.3; }
+    button { background-color: #6D92FF; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 5px; cursor: pointer; transition: opacity 0.3s; }
+    button:hover { opacity: 0.8; }
+    .checkbox { -webkit-appearance: none; -moz-appearance: none; appearance: none; width: 20px; height: 20px; border: 2px solid #6D92FF; border-radius: 4px; outline: none; transition: all 0.3s; position: relative; cursor: pointer; margin-right: 10px; background-color: white; }
+    .checkbox:checked { background-color: #6D92FF; }
+    .checkbox:checked::after { content: ''; position: absolute; left: 50%; top: 50%; width: 25%; height: 50%; border: solid white; border-width: 0 2px 2px 0; transform: translate(-50%, -60%) rotate(45deg); }
+    .checkbox:focus { box-shadow: 0 0 0 2px rgba(39, 94, 254, 0.3); }
+  </style>
+`;
+  function generateSettingsHTML() {
+    let html = styles + '<div class="settings">';
+    for (const [section, fields] of Object.entries(settingsStructure)) {
+      html += `<h2>${section}</h2>`;
+      fields.forEach((field) => {
+        html += field.html(field);
+      });
+      html += "<hr>";
+    }
+    html += `
+      <button id="save-settings">Save Settings</button>
+    </div>
+  `;
+    return html;
+  }
+  function injectSettingsUI() {
+    const targetElement = document.querySelector(".markdown-heading");
+    if (targetElement) {
+      targetElement.insertAdjacentHTML("afterend", generateSettingsHTML());
+      initializeSettings();
+    }
+  }
+  function getNestedValue(obj, path) {
+    return path.split(".").reduce((prev, curr) => prev && prev[curr], obj);
+  }
+  function setNestedValue(obj, path, value) {
+    const keys = path.split(".");
+    const lastKey = keys.pop();
+    const lastObj = keys.reduce((prev, curr) => prev[curr] = prev[curr] || {}, obj);
+    lastObj[lastKey] = value;
+  }
+  function initializeSettings() {
+    var _a;
+    const config2 = getConfig();
+    Object.values(settingsStructure).flat().forEach((field) => {
+      const element = document.getElementById(field.key);
+      if (element) {
+        const value = getNestedValue(config2, field.key);
+        if (field.type === "checkbox") {
+          element.checked = value;
+        } else if (field.type === "select") {
+          element.value = value;
+        }
+      }
+    });
+    (_a = document.getElementById("save-settings")) == null ? void 0 : _a.addEventListener("click", saveSettings);
+  }
+  function saveSettings() {
+    const newConfig = {};
+    Object.values(settingsStructure).flat().forEach((field) => {
+      const element = document.getElementById(field.key);
+      if (element) {
+        const value = field.type === "checkbox" ? element.checked : element.value;
+        setNestedValue(newConfig, field.key, value);
+      }
+    });
+    updateConfig(newConfig);
+    refreshConfig();
+    alert("Settings saved successfully!");
+  }
+  function initSettingsUI() {
+    if (window.location.href.startsWith("https://github.com/SnowAgar25/dlsite-translator-tool")) {
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", injectSettingsUI);
+      } else {
+        injectSettingsUI();
+      }
+    }
+  }
+  function initMainFeatures() {
+    if (config.modules.previewBox.enabled) {
+      initPreviewBox();
+    }
+    if (config.modules.tracker.enabled) {
+      initTracker();
+    }
+  }
+  function init() {
+    const currentUrl = window.location.href;
+    if (currentUrl.includes("dlsite-translator-tool")) {
+      initSettingsUI();
+      return;
+    }
+    if (currentUrl.includes("?tracklist=true")) {
+      if (config.modules.tracker.enabled) {
+        showCachedPage();
+      }
+      return;
+    }
+    if (config.modules.navLink.enabled) {
+      initCustomNavLinks();
+    }
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initMainFeatures);
+    } else {
+      initMainFeatures();
+    }
+  }
+  registerSettingsMenu();
+  init();
+  if (config.debug) {
+    console.log("Debug mode is enabled");
   }
 
 })();

@@ -1,23 +1,47 @@
 import { initPreviewBox } from './preview-box';
 import { initCustomNavLinks } from './nav-link';
 import { initTracker, showCachedPage } from './tracker';
+import { config, registerSettingsMenu } from './config';
+import { initSettingsUI } from './config/settingsUI';
 
-// 檢查 URL 是否包含 '?tracklist=true'
-const isTracklist = window.location.href.includes('?tracklist=true');
-
-if (isTracklist) {
-  showCachedPage();
-} else {
-  initCustomNavLinks();
-
-  function init() {
+function initMainFeatures() {
+  if (config.modules.previewBox.enabled) {
     initPreviewBox();
+  }
+  if (config.modules.tracker.enabled) {
     initTracker();
-  };
+  }
+}
+
+function init() {
+  const currentUrl = window.location.href;
+
+  if (currentUrl.includes('dlsite-translator-tool')) {
+    initSettingsUI();
+    return;
+  }
+
+  if (currentUrl.includes('?tracklist=true')) {
+    if (config.modules.tracker.enabled) {
+      showCachedPage();
+    }
+    return;
+  }
+
+  if (config.modules.navLink.enabled) {
+    initCustomNavLinks();
+  }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', initMainFeatures);
   } else {
-    init();
+    initMainFeatures();
   }
+}
+
+registerSettingsMenu();
+init();
+
+if (config.debug) {
+  console.log('Debug mode is enabled');
 }
