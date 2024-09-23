@@ -807,7 +807,7 @@
     window.addEventListener("load", startObserving);
   }
   const defaultConfig = {
-    debug: true,
+    debug: false,
     modules: {
       navLink: {
         enabled: true

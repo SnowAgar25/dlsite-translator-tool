@@ -4,7 +4,7 @@ import { GM_getValue, GM_registerMenuCommand, GM_setValue } from '$';
 
 // Default configuration
 export const defaultConfig = {
-    debug: true,
+    debug: false,
     modules: {
         navLink: {
             enabled: true,
